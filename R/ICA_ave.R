@@ -8,33 +8,33 @@
 #'
 #'
 #'
-#' @param fimfunc FIM as a \code{function} or a \code{character} string. See \link{mica} argument.
-#' @param lx lower bound of the design space \eqn{\chi}.
-#' @param ux upper bound of the design space \eqn{\chi}.
-#' @param prior a vector of probability measure \eqn{\pi}.
-#' @param param a matrix for set of parameters, i.e. support of \eqn{\pi}. Every row is is a vector of values of parameters.
+#' @param fimfunc  the name of the FIM from available FIM functions in the package as a character string or the user-written function that returns the FIM as a \code{matrix}. See "Details" in \link{mica}.
+#' @param lx lower bound of the design space \eqn{\chi}
+#' @param ux upper bound of the design space \eqn{\chi}
+#' @param prior a vector of the probability measure \eqn{\pi}.
+#' @param param a matrix for set of parameters, i.e. support of \eqn{\pi}. Every row is is a vector of values of a parameter.
 #' The number of its rows must be equal to the length of \code{prior}.
-#' @param iter maximum number of iterations.
+#' @param iter maximum number of iterations
 #' @param k number of design (support) points. Must be larger than the number of model parameters \eqn{p} to avoid singularity of the FIM.
-#' @param control a list of control parameters. See "Details" of \code{\link{mica}}.
-#' @param initial initial a matrix of user intial countries or
-#' a vector of a country that will be inserted  into the initial countries of ICA. See "Details" of \code{\link{mica}}.
-#' @param ... further arguments to be passed to the FIM function corresponding to \code{fimfunc}. For power logisitc model when \code{fimfunc} is equal to \code{FIM_power_logistic}, the value of  \code{s} should be given here.
+#' @param control a list of contains the tuning parameters of ICA and the design problem. See "Details" of \code{\link{mica}}.
+#' @param initial a matrix of the  initial designs that will be used as initial countries in ICA.
+#'  Every row is a design and concatenation of \code{x} and \code{w}.  Default is \code{NULL}. See "Details" of \code{\link{mica}}.
+#' @param ... further arguments to be passed to the FIM function given by \code{fimfunc}.
 #'
 #' @return
 #' an object of class "ICA". See "Value" in \code{\link{mica}}.
 #' @examples
 #' \dontrun{
-#' test <- on_average_ica (fimfunc = "FIM_logistic",
-#'                         lx = -5, ux = 5, prior = rep(1/4, 4),
-#'                         param = matrix(c(0.5, 1.5, 0.5, 1.5, 4.0, 4.0, 5.0, 5.0), 4, 2),
-#'                         iter = 200, k = 3)
+#' test <- ave(fimfunc = "FIM_logistic",
+#'                        lx = -5, ux = 5, prior = rep(1/4, 4),
+#'                        param = matrix(c(0.5, 1.5, 0.5, 1.5, 4.0, 4.0, 5.0, 5.0), 4, 2),
+#'                        iter = 200, k = 3)
 #'
 #' plot(test)
 #' print(test)
 #'################################################################################
 #'## using equivalence theorem as stopping rule. Can be applied in H-algorithm
-#' test <- on_average_ica (fimfunc = "FIM_logistic",
+#' test <- ave (fimfunc = "FIM_logistic",
 #'                          lx = -5, ux = 5, prior = rep(1/4, 4),
 #'                          param = matrix(c(0.5, 1.5, 0.5, 1.5, 4.0, 4.0, 5.0, 5.0), 4, 2),
 #'                          iter = 200, k =3,
@@ -44,7 +44,7 @@
 #'
 #' @export
 
-on_average_ica <- function(fimfunc,
+ave <- function(fimfunc,
                            lx,
                            ux,
                            prior,
@@ -296,12 +296,12 @@ on_average_ica <- function(fimfunc,
                                                                     stop_rule = "equivalence", equal_weight = TRUE,
                                                                     stop_tol = .999,  equivalence_every = 100)))
     locally_val <- rep(NA,  n_prior)
-    DLB_val <- rep(NA,  n_prior)
+    ELB_val <- rep(NA,  n_prior)
     locally_design <- matrix(NA, ncol = dim(param)[1], nrow = n_prior)
 
     for (i in 1:n_prior){
       locally_val[i] <- locally_res[, i]$evol[[length(locally_res[, i]$evol)]]$min_cost
-      DLB_val[i] <- locally_res[, i]$evol[[length(locally_res[, i]$evol)]]$DLB
+      ELB_val[i] <- locally_res[, i]$evol[[length(locally_res[, i]$evol)]]$ELB
       locally_design[i, ] <- c(locally_res[, i]$evol[[length(locally_res[, i]$evol)]]$x,
                                locally_res[, i]$evol[[length(locally_res[, i]$evol)]]$w)
     }
