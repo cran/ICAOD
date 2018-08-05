@@ -107,7 +107,7 @@ bayes <- function(formula,
                   initial = NULL,
                   npar = NULL,
                   plot_3d = c("lattice", "rgl")) {
-
+  #cat("bayes:", get(".Random.seed")[2], "\n")
   if (is.null(npar)){
     if (!missing(formula))
       npar <- length(parvars)
@@ -124,7 +124,8 @@ bayes <- function(formula,
                          lx = lx,
                          ux = ux,
                          type = "D",
-                         method = "cubature",
+                         crt_method = "cubature",
+                         sens_method = "cubature",
                          iter = iter,
                          k = k,
                          npar = npar,
@@ -218,6 +219,8 @@ sensbayes <- function(formula,
                              const = list(ui = NULL, ci = NULL, coef = NULL),
                              compound = list(prob = NULL, alpha = NULL),
                              varlist = list(),
+                             crt_method = "cubature",
+                             sens_method = "cubature",
                              calledfrom = "sensfuncs",
                              npar = npar,
                              calculate_criterion = calculate_criterion,
@@ -229,9 +232,9 @@ sensbayes <- function(formula,
 #' @title   Bayesian Compound DP-Optimal Designs
 #'
 #' @description
-#'  Finds compound Bayesian DP-optimal designs that meets the dual goal of the parameter estimation and
+#'  Finds compound Bayesian DP-optimal designs that meet the dual goal of parameter estimation and
 #'   increasing the probability of a particular outcome in a binary response  model.
-#'A compound Bayesian DP-optimal design maximizes  the product of the efficiencies of a design \eqn{\xi} with respect to D- and average P-optimality, weighted by a pre-defined mixing constant
+#'A compound Bayesian DP-optimal design maximizes  the product of the Bayesian efficiencies of a design \eqn{\xi} with respect to D- and average P-optimality, weighted by a pre-defined mixing constant
 #' \eqn{0 \leq \alpha \leq 1}{0 <= \alpha <= 1}.
 #'
 #' @inheritParams bayes
@@ -250,14 +253,14 @@ sensbayes <- function(formula,
 #'    \eqn{\pi(\theta)} is a user-given  prior distribution for the vector of unknown parameters \eqn{\theta} and
 #'    \eqn{p(x_i, \theta)} is the ith probability of success
 #' given by \eqn{x_i} in a binary response model.
-#'   A Bayesian compound DP-optimal criterion maximizes over \eqn{\Xi}
+#'   A  compound Bayesian DP-optimal design maximizes over \eqn{\Xi}
 #' \deqn{\int_{\theta \in \Theta} \frac{\alpha}{q}\log|M(\xi, \theta)| + (1- \alpha)
 #'\log \left( \sum_{i=1}^k w_ip(x_i, \theta) \right) \pi(\theta) d\theta.}{
 #' integration over \Theta \alpha/q log|M(\xi, \theta)| + (1- \alpha)
 #'log ( \sum w_i p(x_i, \theta)) \pi(\theta) d\theta.
 #'}
 #'
-#' Use \code{\link{plot}} function to verify the general equivalence theorem for the output design.
+#' Use \code{\link{plot}} function to verify the general equivalence theorem for the output design or change \code{checkfreq} in \code{\link{ICA.control}}..
 #'
 #' To increase the speed of the algorithm, change the tuning parameters \code{tol} and \code{maxEval} via the
 #' argument \code{crt.bayes.control}.
@@ -311,7 +314,8 @@ bayescomp <- function(formula,
                          lx = lx,
                          ux = ux,
                          type = "DPA",
-                         method = "cubature",
+                         crt_method = "cubature",
+                         sens_method = "cubature",
                          iter = iter,
                          k = k,
                          npar = npar,
@@ -333,7 +337,7 @@ bayescomp <- function(formula,
 ######################################################################################################*
 #'@title Verifying Optimality of Bayesian Compound DP-optimal Designs
 #'@description
-#'  This function plot the sensitivity (derivative) function given an approximate (continuous) design and calculate the efficiency lower bound (ELB) for Bayesian D-optimal designs.
+#'  This function plot the sensitivity (derivative) function given an approximate (continuous) design and calculate the efficiency lower bound (ELB) for Bayesian DP-optimal designs.
 #' Let \eqn{\boldsymbol{x}}{x} belongs to \eqn{\chi} that denotes the design space.
 #' Based on the general equivalence theorem, generally, a design \eqn{\xi^*}{\xi*} is optimal if and only if the value of its sensitivity (derivative) function
 #' be non-positive for all \eqn{\boldsymbol{x}}{x} in \eqn{\chi} and it only reaches zero
@@ -403,6 +407,8 @@ sensbayescomp <- function(formula,
                              sens.bayes.control = sens.bayes.control,
                              crt.bayes.control = crt.bayes.control,
                              type = "DPA",
+                             crt_method = "cubature",
+                             sens_method = "cubature",
                              plot_3d = plot_3d[1],
                              plot_sens =  plot_sens,
                              const = list(ui = NULL, ci = NULL, coef = NULL),
@@ -416,41 +422,85 @@ sensbayescomp <- function(formula,
 }
 ######################################################################################################*
 ######################################################################################################*
-# beff <- function(fim, xopt, wopt, x, w, prior, control = list()){
-#   ### relative efficieny of x with respect to xopt
-#   if (is.null(control$tol))
-#     control$tol = 1e-5
-#   if (is.null(control$maxEval))
-#     control$maxEval = 50000
-#   truncated_standard <- cubature::hcubature(f = function(param) prior$fn(t(param)),
-#                                             lowerLimit = prior$lower,
-#                                             upperLimit = prior$upper,
-#                                             vectorInterface = TRUE)$integral
-#
-#
-#   cr_integrand <- function(param, x, w){
-#     bcrfunc1 <- apply(param, 2,
-#                       FUN = function(col_par)-det2(fim(x = x, w = w, param = col_par), logarithm = TRUE)) * prior$fn(t(param))
-#     dim(bcrfunc1) <- c(1, length(bcrfunc1))
-#     return(bcrfunc1)
-#   }
-#
-#
-#   crfunc_bayesian_D  <- function(x, w, maxEval, tol) {
-#     out <- cubature::hcubature(f = cr_integrand, lowerLimit = prior$lower, upperLimit = prior$upper,
-#                                vectorInterface = TRUE,
-#                                x = x, w = w, tol = control$tol, maxEval = control$maxEval)
-#
-#     val <- out$integral
-#     return(list(val = val, fneval = out$functionEvaluations))
-#   }
-#
-#   releff<- crfunc_bayesian_D(x = xopt, w = wopt, maxEval = control$maxEval, tol = control$tol)$val/
-#     crfunc_bayesian_D(x = x, w = w, maxEval = control$maxEval, tol = control$tol)$val
-#   return(releff)
-# }
 ######################################################################################################*
 ######################################################################################################*
+LLTMbayes <- function(prior,
+                      Q = NULL,
+                      lx,
+                      ux,
+                      iter,
+                      k,
+                      ICA.control =  list(),
+                      crt.bayes.control = list(),
+                      sens.bayes.control = list(),
+                      initial = NULL,
+                      npar = NULL,
+                      plot_3d = c("lattice", "rgl")
+                      ,c) {
+
+  npar <- prior$npar
+  if (!is.numeric(npar))
+    stop("'npar' is the number of parameters and must be numeric")
+  # browser()
+  # i <- 1
+  # for (i in 1:nrow(Q)){
+  #   pars <- paste("b", 0:(ncol(W)-1), sep = "")
+  #   exp_char <- paste("exp(theta", paste(" - ", pars, "*", Q[i,], collapse = ""), ")", sep =  "")
+  #   exp_char <- paste("formula1 = ~ ", exp_char, "/(1 + ", exp_char, ")", sep = "")
+  #   formula1 <- NA # to not prduce warning in rcmd check
+  #   eval(parse(text = exp_char))
+  #
+  #   paravars <- pars
+  #   predvars <- "theta"
+  #   cre
+  # }
+
+  #
+  #   formula = ~ exp(theta - b1 * x1 - b0)/(1 + exp(theta - b1 * x1 - b0))
+  #   parvars = c("b0", "b1")
+  #   predvars = c("theta", "x1")
+  Q <- cbind(1, Q)
+  wlambda <- function(x, w, param, q){
+    # x is the design points that are the values for the ability parameters
+    #qparam <- apply(q * param, 2, sum)
+    qparam <- -sum(q * param)
+    # argument of lambda for each param vector
+    arg_lambda <- sapply(1:length(qparam), function(k)sum(w * exp(qparam[k] + x)/(1 + exp(qparam[k] + x))^2))
+  }
+
+  fim_LLTM <- function(x, w, param){
+    Qmat <- Q
+    nitems <- nrow(Qmat)
+    param <- c(c, param)
+    lmat <- lapply(1:nitems, FUN = function(j)wlambda(q = Qmat[j, ],x = x, w = w, param = param) * Qmat[j, ] %*% t(Qmat[j, ]))
+    lmat <- apply(simplify2array(lmat), c(1, 2), sum)
+    return(lmat)
+  }
+
+  output <-  bayes_inner(fimfunc =   fim_LLTM,
+                         lx = lx,
+                         ux = ux,
+                         type = "D",
+                         method = "cubature",
+                         iter = iter,
+                         k = k,
+                         npar = npar,
+                         prior = prior,
+                         compound = list(prob = NULL, alpha = NULL),
+                         multiple.control = list(),
+                         ICA.control =  ICA.control,
+                         crt.bayes.control = crt.bayes.control,
+                         sens.bayes.control = sens.bayes.control,
+                         initial = initial,
+                         plot_3d = plot_3d[1],
+                         const = list(ui = NULL, ci = NULL, coef = NULL))
+
+
+  return(output)
+}
+######################################################################################################*
+######################################################################################################*
+
 #  roxygen
 #' Plotting \code{bayes} Objects
 #'
@@ -493,6 +543,8 @@ plot.bayes <- function(x, iter = NULL,
   }
   if (any(class(x) != c("list", "bayes")))
     stop("'x' must be of class 'bayes'")
+
+
   ## to not be confused with design points
   obj <- x
   arg <- obj$arg
@@ -501,7 +553,6 @@ plot.bayes <- function(x, iter = NULL,
       totaliter <- iter
   if (totaliter > length(x$evol))
     stop("'iter' is larger than the maximum number of iterations")
-
 
   if (calculate_criterion || sensitivity){
     if (is.null(sens.bayes.control)){
@@ -520,7 +571,8 @@ plot.bayes <- function(x, iter = NULL,
                                    up = arg$prior$upper, npar = arg$npar,
                                    truncated_standard = arg$truncated_standard,
                                    const = arg$const, sens.bayes.control = sens.bayes.control,
-                                   compound = arg$compound)
+                                   compound = arg$compound,
+                                   method = "cubature")
       Psi_x_bayes  <- temp_psi$Psi_x_bayes
       Psi_xy_bayes  <- temp_psi$Psi_xy_bayes
     }
@@ -545,6 +597,8 @@ plot.bayes <- function(x, iter = NULL,
                                 plot_3d = plot_3d[1],
                                 plot_sens = TRUE,
                                 const = arg$const,
+                                sens_method = arg$sens_method,
+                                crt_method = arg$crt_method,
                                 compound = arg$compound,### you dont need compund here
                                 varlist = sens_varlist,
                                 calledfrom =  "plot",
@@ -721,8 +775,8 @@ print.sensbayes <- function(x,  ...){
 #' sens.bayes.control()
 #' sens.bayes.control(cubature = list(maxEval = 50000))
 #' sens.bayes.control(optslist = list(maxeval = 3000))
-sens.bayes.control <- function(cubature = list(tol = 1e-6,
-                                               maxEval = 100000,
+sens.bayes.control <- function(cubature = list(tol = 1e-5,
+                                               maxEval = 50000,
                                                absError = 0),
                                x0 = NULL,
                                optslist = list(stopval = -Inf,
@@ -731,7 +785,6 @@ sens.bayes.control <- function(cubature = list(tol = 1e-6,
                                                ftol_rel = 1e-10,
                                                maxeval = 2000),
                                ...){
-
   optstlist2 <- do.call(c, list(optslist, list(...)))
   outlist <- suppressWarnings(nloptr::nl.opts(optstlist2))
   outlist["algorithm"] <- optslist$algorithm
@@ -749,20 +802,14 @@ sens.bayes.control <- function(cubature = list(tol = 1e-6,
   if (is.null(optslist$maxeval))
     outlist$maxeval <- 2000
 
-
   ### cubature part
   cubature_out <- do.call(control.cubature, cubature)
   if (is.null(cubature$tol))
     cubature_out$tol <- 1e-6
   if (is.null(cubature$maxEval))
     cubature_out$maxEval <- 100000
-  # if (is.null(cubature$doChecking))
-  #   cubature_out$doChecking <- FALSE
-  # if (is.null(cubature$norm))
-  #   cubature_out$norm <- c("INDIVIDUAL", "PAIRED", "L2", "L1", "LINF")
   if (is.null(cubature$absError))
     cubature_out$absError <- 0
-
 
   return(list(x0 = x0, optslist = outlist, cubature = cubature_out))
 }
@@ -776,7 +823,6 @@ sens.bayes.control <- function(cubature = list(tol = 1e-6,
 #'  the accuracy of the results.
 #'  The user should find a trade-off between accuracy and speed for his/her example.
 #' @param cubature A list that will be passed to the arguments of the function \code{\link[cubature]{hcubature}}. See 'Details'.
-#'
 #' @details
 #' \code{cubature} is a list that its components will be passed to the function \code{\link[cubature]{hcubature}}.
 #' Its components are:
@@ -802,12 +848,11 @@ crt.bayes.control <- function(cubature = list(tol = 1e-5, maxEval = 50000, absEr
     cubature_out$tol <- 1e-5
   if (is.null(cubature$maxEval))
     cubature_out$maxEval <- 50000
-  # if (is.null(cubature$doChecking))
-  #   cubature_out$doChecking <- FALSE
-  # if (is.null(cubature$norm))
-  #   cubature_out$norm <- c("INDIVIDUAL", "PAIRED", "L2", "L1", "LINF")
   if (is.null(cubature$absError))
     cubature_out$absError <- 0
+
+
+
   return(list(cubature = cubature_out))
 }
 ######################################################################################################*
@@ -827,6 +872,7 @@ crt.bayes.control <- function(cubature = list(tol = 1e-5, maxEval = 50000, absEr
 
 
 # @importFrom nloptr directL you have it in minimax
+#@importFrom mvQuad createNIGrid
 ## @importFrom sn dmsn dmst dmsc
 # @importFrom LaplacesDemon dmvl dmvt dmvc dmvpe
 iterate.bayes <- function(object, iter){
@@ -844,8 +890,8 @@ iterate.bayes <- function(object, iter){
   type <- arg$type
   ## number of parameters
   #npar <- arg$npar
-  if (!(type %in% c("D", "DPA", "DPM", "multiple")))
-    stop("bug: 'type' must be  'D' or 'DPM' or 'DPM' or 'multiple' in 'iterate.ICAB")
+  if (!(type %in% c("D", "DPA", "DPM", "multiple", "D_LLTM")))
+    stop("bug: 'type' must be  'D' or 'DPM' or 'DPM' or 'multiple' or 'D_LLTM' in 'iterate.ICAB")
   if (ICA.control$equal_weight)
     w_equal <- rep(1/arg$k, arg$k)
 
@@ -912,7 +958,7 @@ iterate.bayes <- function(object, iter){
                       crfunc = arg$crfunc,
                       vertices_outer = vertices_outer)
   ########################################################################################*
-
+  #cat("iterate ", get(".Random.seed")[2], "\n")
   #################################################################################################*
   # Initialization when evol is NULL
   #################################################################################################*
@@ -979,11 +1025,11 @@ iterate.bayes <- function(object, iter){
   #################################################################################################*
   if (!is.null(evol)){
     ## reset the seed!
-    # if (exists(".Random.seed")){
-    #   GlobalSeed <- get(".Random.seed", envir = .GlobalEnv)
-    #   #if you call directly from iterate and not minimax!
-    #   on.exit(assign(".Random.seed", GlobalSeed, envir = .GlobalEnv))
-    # }
+    if (exists(".Random.seed")){
+      GlobalSeed <- get(".Random.seed", envir = .GlobalEnv)
+      #if you call directly from iterate and not bayes!
+      on.exit(assign(".Random.seed", GlobalSeed, envir = .GlobalEnv))
+    }
     msg <- object$best$msg
     prev_iter <- length(evol) ##previous number of iterationst
     maxiter <- iter + prev_iter
@@ -1003,10 +1049,11 @@ iterate.bayes <- function(object, iter){
     best_imp_id<- which.min(imp_cost)
     revol_rate <-  arg$updating$revol_rate
     ##updating the random seed
-    # if (!is.null(ICA.control$rseed)){
-    #   do.call("RNGkind",as.list(arg$updating$oldRNGkind))  ## must be first!
-    #   assign(".Random.seed", arg$updating$oldseed , .GlobalEnv)
-    # }
+
+    if (!is.null(ICA.control$rseed)){
+      do.call("RNGkind",as.list(arg$updating$oldRNGkind))  ## must be first!
+      assign(".Random.seed", arg$updating$oldseed , .GlobalEnv)
+    }
   }
   ##########################################################################*
   space_size <- arg$ud - arg$ld
@@ -1030,19 +1077,32 @@ iterate.bayes <- function(object, iter){
       #cat(totaliter, " while loop: ", ii, "\n")
       ########################################## local search is only for point!
       if (ICA.control$lsearch){
+        # if (ii == 4){
+        #   cat(Empires[[ii]]$ImperialistPosition)
+        #   return(NULL)
+        # }
+
+        #cat("\nbefore local: empire",ii, " des:",  Empires[[ii]]$ImperialistPosition)
         LocalSearch_res <- LocalSearch (TheEmpire =  Empires[[ii]],
                                         lower = arg$ld,
                                         upper = arg$ud,
                                         l = ICA.control$l,
                                         fixed_arg = fixed_arg)
 
+
         Empires[[ii]] <- LocalSearch_res$TheEmpire
+
+
+
+       # cat("\nafter local: empire",ii, " des:",  Empires[[ii]]$ImperialistPosition)
+
         total_nfeval <- total_nfeval + LocalSearch_res$nfeval
         total_nlocal <- total_nlocal + LocalSearch_res$n_success
       }
       ##########################################################################*
       # if (totaliter == 2 & ii == 4)
       #   debug(Calculate_Cost_bayes)
+
       ############################################################## Assimilation
       temp5 <- AssimilateColonies2(TheEmpire = Empires[[ii]],
                                    AssimilationCoefficient = ICA.control$assim_coeff,
@@ -1061,6 +1121,7 @@ iterate.bayes <- function(object, iter){
       Empires[[ii]] <- temp5$TheEmpire
       total_nfeval <- total_nfeval + temp5$nfeval
       total_nimprove <-  total_nimprove + temp5$nimprove
+      #cat("\nafter assim: empire",ii, " des:",  Empires[[ii]]$ImperialistPosition)
       ##########################################################################*
 
       ############################################################### Revolution
@@ -1077,12 +1138,15 @@ iterate.bayes <- function(object, iter){
       Empires[[ii]] <- temp4$TheEmpire
       total_nrevol <- total_nrevol + temp4$nrevol
       total_nfeval <- total_nfeval + temp4$nfeval
+
+      #cat("\nafter revol: empire",ii, " des:",  Empires[[ii]]$ImperialistPosition)
       ############################################################*
       Empires[[ii]] <- PossesEmpire(TheEmpire = Empires[[ii]])
-
+     # cat("\nafter possession: empire",ii, " des:",  Empires[[ii]]$ImperialistPosition)
       ##after updating the empire the total cost should be updated
       ## Computation of Total Cost for Empires
       Empires[[ii]]$TotalCost <- Empires[[ii]]$ImperialistCost + ICA.control$zeta * mean(Empires[[ii]]$ColoniesCost)
+
 
     }
     ############################################################ end of the loop for empires [[ii]]
@@ -1110,11 +1174,11 @@ iterate.bayes <- function(object, iter){
     ############################################################################*
     # extracing the best emperor and its position
     imp_cost <- round(sapply(Empires, "[[", "ImperialistCost"), 12)
-    if (type %in% c("D", "DPA", "DPM", "multiple")){
+    if (type %in% c("D", "DPA", "DPM", "multiple", "D_LLTM")){
       min_cost[totaliter] <-   min(imp_cost)
       mean_cost[totaliter] <-  mean(imp_cost)
     }else
-      stop("Bug: check the type")
+      stop("Bug: check the type in iterate.bayes")
     best_imp_id <- which.min(imp_cost) ## which list contain the best imp
     if (!ICA.control$equal_weight)
       w <- Empires[[best_imp_id]]$ImperialistPosition[, w_id] else

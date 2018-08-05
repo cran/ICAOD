@@ -201,3 +201,15 @@ FIM_power_logistic <- function(x, w, param, s) {
     .Call('_ICAOD_FIM_power_logistic', PACKAGE = 'ICAOD', x, w, param, s)
 }
 
+#' @title Fisher Information Matrix for the Sigmoid Emax Model
+#' @description It provides the cpp function for FIM for the model \code{~b1+(b2-b1)*(x^b4)/(x^b4+b3^b4)}
+#' @param x Vector of design points.
+#' @param w Vector of design weight. Its length must be equal to the length of \code{x} and \code{sum(w) = 1}.
+#' @param param Vector of values for the model parameters \code{c(b1, b2, b3, b4)}.
+#' The mean of response variable is .
+#' @return Fisher information matrix.
+#' @export
+FIM_sig_emax <- function(x, w, param) {
+    .Call('_ICAOD_FIM_sig_emax', PACKAGE = 'ICAOD', x, w, param)
+}
+
