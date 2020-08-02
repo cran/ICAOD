@@ -4,12 +4,25 @@
 \alias{beff}
 \title{Calculates Relative Efficiency for Bayesian Optimal Designs}
 \usage{
-beff(formula, predvars, parvars, family = gaussian(), prior,
-  fimfunc = NULL, x2, w2, x1, w1, crt.bayes.control = list(),
-  npar = NULL, type = c("D", "PA"), prob = NULL)
+beff(
+  formula,
+  predvars,
+  parvars,
+  family = gaussian(),
+  prior,
+  fimfunc = NULL,
+  x2,
+  w2,
+  x1,
+  w1,
+  crt.bayes.control = list(),
+  npar = NULL,
+  type = c("D", "PA"),
+  prob = NULL
+)
 }
 \arguments{
-\item{formula}{A nonlinear model \code{\link[stats]{formula}}.
+\item{formula}{A linear or nonlinear model \code{\link[stats]{formula}}.
 A symbolic description of the model consists of predictors and the unknown model parameters.
 Will be coerced to a \code{\link[stats]{formula}} if necessary.}
 
@@ -132,6 +145,7 @@ for (i in 1:6)
 # For example the first row represents Bayesian D-efficiencies of different
 # Bayesian optimal design found assuming different priors with respect to
 # the Bayesian D-optimal design found under uniform prior distribution.
+  eff4.1
 }
 
 #############################
