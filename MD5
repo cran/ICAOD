@@ -1,4 +1,4 @@
-bf9166cc9c67ae9f5c946f79b7e2c77b *DESCRIPTION
+e710ea5ac480aabf70e374421d4e9988 *DESCRIPTION
 e3407b13ca46a3c23827e0754420fda0 *NAMESPACE
 2987e5e276e3cee0a4faf80aaa4bd475 *R/1-UserCommonFunctions.R
 d1c39086e6932c075e055bb0d24b29d3 *R/10-UserEfficiency.R
@@ -12,10 +12,7 @@ be0a86353ce2d7d773df2ed4e9b49b89 *R/6-UserBayesFunctions.R
 a4061c765e85cd17fb2b1e22ded4fcb4 *R/9-formula_funcs.R
 4a97ce0ce9779146e38e4237ca4bca54 *R/ICABOD_help_page.R
 6c39ae3f6ea75a3494e784433195d454 *R/RcppExports.R
-ae873d2f5cf68433711bd53fae3ec188 *build/vignette.rds
 eb7c0989907ce7d7ca8cb3f38a3816f2 *inst/JSS_code.R
-48c32fcbb9313eb1f0193ddf4e1eec5d *inst/doc/ICAOD.pdf
-fb2c3e9ef18fdc62f2824d5a1aee6b31 *inst/doc/ICAOD.pdf.asis
 e9ada3636e81665c1267b22b00c023c7 *inst/examples/bayes_examples.R
 f246b60794014d1cda3b975491ef8c4c *inst/examples/bayescomp_examples.R
 25ca2e985bfabf5d78811ba5b0ef0ce8 *inst/examples/beff_examples.R
@@ -94,4 +91,3 @@ e84cc9e4124a94675481de5ea1e5a611 *src/FIM_mixed_inhibition.cpp
 16ad48b2874a2496a70a399332c92f21 *src/FIM_sig_emax.cpp
 f96908f7bb9df4160f7e2b3721eacf5d *src/RcppExports.cpp
 8f4f74277b2eb5801f1e5e5228882285 *src/det2.cpp
-fb2c3e9ef18fdc62f2824d5a1aee6b31 *vignettes/ICAOD.pdf.asis
